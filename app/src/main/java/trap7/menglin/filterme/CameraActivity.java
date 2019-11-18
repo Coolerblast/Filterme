@@ -20,6 +20,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -27,6 +28,9 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -68,22 +72,27 @@ public class CameraActivity extends AppCompatActivity {
     private boolean mFlashSupported;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
+    private int DSI_height, DSI_width;
+    private CameraManager manager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
         setContentView(R.layout.activity_camera);
         textureView = (TextureView) findViewById(R.id.texture);
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
-        takePictureButton = (Button) findViewById(R.id.button);
-        assert takePictureButton != null;
-        takePictureButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                takePicture();
-            }
-        });
+//        takePictureButton = (Button) findViewById(R.id.button);
+//        assert takePictureButton != null;
+//        takePictureButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                takePicture();
+//            }
+//        });
+
     }
 
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
@@ -135,6 +144,25 @@ public class CameraActivity extends AppCompatActivity {
             createCameraPreview();
         }
     };
+
+    private void setAspectRatioTextureView(int ResolutionWidth, int ResolutionHeight) {
+        if (ResolutionWidth > ResolutionHeight) {
+            int newWidth = DSI_width;
+            int newHeight = ((DSI_width * ResolutionWidth) / ResolutionHeight);
+            updateTextureViewSize(newWidth, newHeight);
+
+        } else {
+            int newWidth = DSI_width;
+            int newHeight = ((DSI_width * ResolutionHeight) / ResolutionWidth);
+            updateTextureViewSize(newWidth, newHeight);
+        }
+
+    }
+
+    private void updateTextureViewSize(int viewWidth, int viewHeight) {
+        Log.d(TAG, "TextureView Width : " + viewWidth + " TextureView Height : " + viewHeight);
+        textureView.setLayoutParams(new RelativeLayout.LayoutParams(viewWidth, viewHeight));
+    }
 
     protected void startBackgroundThread() {
         mBackgroundThread = new HandlerThread("Camera Background");
@@ -274,14 +302,19 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private void openCamera() {
-        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         Log.e(TAG, "is camera open");
         try {
-            cameraId = manager.getCameraIdList()[0];
+            cameraId = manager.getCameraIdList()[CameraCharacteristics.LENS_FACING_BACK];
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             assert map != null;
             imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
+            DisplayMetrics displayMetrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            DSI_height = displayMetrics.heightPixels;
+            DSI_width = displayMetrics.widthPixels;
+            setAspectRatioTextureView(imageDimension.getHeight(), imageDimension.getWidth());
             // Add permission for camera and let user grant the permission
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(CameraActivity.this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
@@ -346,5 +379,40 @@ public class CameraActivity extends AppCompatActivity {
         //closeCamera();
         stopBackgroundThread();
         super.onPause();
+    }
+
+    public void swapCamera(View view) {
+        try {
+            if (cameraId.equals(manager.getCameraIdList()[CameraCharacteristics.LENS_FACING_BACK])) {
+                cameraId = manager.getCameraIdList()[CameraCharacteristics.LENS_FACING_FRONT];
+                closeCamera();
+                reopenCamera();
+
+            } else if (cameraId.equals(manager.getCameraIdList()[CameraCharacteristics.LENS_FACING_FRONT])) {
+                cameraId = manager.getCameraIdList()[CameraCharacteristics.LENS_FACING_BACK];
+                closeCamera();
+                reopenCamera();
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void reopenCamera() throws CameraAccessException{
+        CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+        StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        assert map != null;
+        imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        DSI_height = displayMetrics.heightPixels;
+        DSI_width = displayMetrics.widthPixels;
+        setAspectRatioTextureView(imageDimension.getHeight(), imageDimension.getWidth());
+        // Add permission for camera and let user grant the permission
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(CameraActivity.this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
+            return;
+        }
+        manager.openCamera(cameraId, stateCallback, null);
     }
 }
