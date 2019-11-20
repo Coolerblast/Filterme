@@ -12,7 +12,8 @@ import android.os.Bundle;
 public class MainActivity extends AppCompatActivity {
 
 
-    private static final int MY_CAMERA_REQUEST_CODE = 100;
+    private static final int MY_CAMERA_REQUEST_CODE = 200;
+    private static final int MY_WRITE_REQUEST_CODE = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,7 +22,11 @@ public class MainActivity extends AppCompatActivity {
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, MY_CAMERA_REQUEST_CODE);
+
         }
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED)
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_WRITE_REQUEST_CODE);
+
 
         // Begin the transaction
         FragmentTransaction ftCamera = getSupportFragmentManager().beginTransaction();

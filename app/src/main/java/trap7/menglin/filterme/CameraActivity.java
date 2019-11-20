@@ -2,6 +2,7 @@ package trap7.menglin.filterme;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
@@ -28,8 +29,6 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
-import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -43,8 +42,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 public class CameraActivity extends AppCompatActivity {
@@ -69,6 +70,7 @@ public class CameraActivity extends AppCompatActivity {
     private ImageReader imageReader;
     private File file;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
+    private static final int REQUEST_WRITE_PERMISSION = 100;
     private boolean mFlashSupported;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
@@ -84,14 +86,14 @@ public class CameraActivity extends AppCompatActivity {
         textureView = (TextureView) findViewById(R.id.texture);
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
-//        takePictureButton = (Button) findViewById(R.id.button);
-//        assert takePictureButton != null;
-//        takePictureButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                takePicture();
-//            }
-//        });
+        takePictureButton = (Button) findViewById(R.id.takePicBtn);
+        assert takePictureButton != null;
+        takePictureButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                takePicture();
+            }
+        });
 
     }
 
@@ -208,14 +210,23 @@ public class CameraActivity extends AppCompatActivity {
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             // Orientation
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
+            System.out.println(rotation);
+
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-            final File file = new File(Environment.getExternalStorageDirectory() + "/pic.jpg");
+
+
+            File root = Environment.getExternalStorageDirectory();
+            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+            String imgName = "FILTERME_"+timeStamp+"_";
+            String uniqueName = root.getAbsolutePath()+"/DCIM/Camera/"+imgName+".jpg";
+            final File file = new File(uniqueName);
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader reader) {
                     Image image = null;
                     try {
                         image = reader.acquireLatestImage();
+
                         ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                         byte[] bytes = new byte[buffer.capacity()];
                         buffer.get(bytes);
@@ -266,6 +277,10 @@ public class CameraActivity extends AppCompatActivity {
                 public void onConfigureFailed(CameraCaptureSession session) {
                 }
             }, mBackgroundHandler);
+            Intent i = new Intent(this, ViewCamera.class);
+            String key = "imagePath";
+            i.putExtra(key, uniqueName);
+            this.startActivity(i);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -359,6 +374,13 @@ public class CameraActivity extends AppCompatActivity {
                 finish();
             }
         }
+        if(requestCode == REQUEST_WRITE_PERMISSION){
+            if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
+                // close the app
+                Toast.makeText(CameraActivity.this, "Sorry!!!, you can't use this app without granting permission", Toast.LENGTH_LONG).show();
+                finish();
+            }
+        }
     }
 
     @Override
@@ -372,14 +394,26 @@ public class CameraActivity extends AppCompatActivity {
             textureView.setSurfaceTextureListener(textureListener);
         }
     }
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        Log.e(TAG, "onRestart");
+        startBackgroundThread();
+        if (textureView.isAvailable()) {
+            openCamera();
+        } else {
+            textureView.setSurfaceTextureListener(textureListener);
+        }
+    }
 
     @Override
     protected void onPause() {
         Log.e(TAG, "onPause");
-        //closeCamera();
+        closeCamera();
         stopBackgroundThread();
         super.onPause();
     }
+
 
     public void swapCamera(View view) {
         try {
