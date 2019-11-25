@@ -182,6 +182,7 @@ public class CameraActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+    byte[] bites;
 
     protected void takePicture() {
         if (null == cameraDevice) {
@@ -217,12 +218,13 @@ public class CameraActivity extends AppCompatActivity {
 
             File root = Environment.getExternalStorageDirectory();
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-            String imgName = "FILTERME_"+timeStamp+"_";
-            String uniqueName = root.getAbsolutePath()+"/DCIM/Camera/"+imgName+".jpg";
+            String imgName = "/FILTERME_"+timeStamp+"_";
+            String uniqueName = getFilesDir()+imgName+".jpg";
             final File file = new File(uniqueName);
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader reader) {
+
                     Image image = null;
                     try {
                         image = reader.acquireLatestImage();
@@ -247,6 +249,7 @@ public class CameraActivity extends AppCompatActivity {
                     try {
                         output = new FileOutputStream(file);
                         output.write(bytes);
+                        bites = bytes;
                     } finally {
                         if (null != output) {
                             output.close();
@@ -280,6 +283,7 @@ public class CameraActivity extends AppCompatActivity {
             Intent i = new Intent(this, ViewCamera.class);
             String key = "imagePath";
             i.putExtra(key, uniqueName);
+            i.putExtra("bytes", bites);
             this.startActivity(i);
         } catch (CameraAccessException e) {
             e.printStackTrace();
