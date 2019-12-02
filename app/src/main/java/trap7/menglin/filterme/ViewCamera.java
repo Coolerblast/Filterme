@@ -29,7 +29,7 @@ public class ViewCamera extends AppCompatActivity {
         Intent i = getIntent();
         imgPath = i.getStringExtra("imagePath");
         imgView = findViewById(R.id.imageView);
-        bites = i.getByteArrayExtra("bytes");
+
         imgView.setImageBitmap(BitmapFactory.decodeFile(imgPath));
     }
     public void deleteImg(View view){
@@ -42,27 +42,8 @@ public class ViewCamera extends AppCompatActivity {
             }
         }
     }
-    public void saveImg(View view) throws  IOException{
-        File fsave = new File(imgPath);
-        if (fsave.exists()) {
-            OutputStream output = null;
-            File root = Environment.getExternalStorageDirectory();
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-            String imgName = "/FILTERME_"+timeStamp+"_";
-            String uniqueName = imgName+".jpg";
-            String galleryFilePath = root.getAbsolutePath()+uniqueName;
-            System.out.println(imgPath);
-            System.out.println(galleryFilePath);
-            try {
-                output = new FileOutputStream(galleryFilePath);
-                output.write(bites);
-                fsave.delete();
-            } finally {
-                if (null != output) {
-                    output.close();
-                }
-            }
-        }
+    public void shareImg(View view) throws  IOException{
+
     }
 }
 ///can u help me fix a problem

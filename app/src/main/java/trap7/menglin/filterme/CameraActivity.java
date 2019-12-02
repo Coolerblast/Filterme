@@ -219,7 +219,7 @@ public class CameraActivity extends AppCompatActivity {
             File root = Environment.getExternalStorageDirectory();
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
             String imgName = "/FILTERME_"+timeStamp+"_";
-            String uniqueName = getFilesDir()+imgName+".jpg";
+            String uniqueName =root.getAbsolutePath()+imgName+".jpg";
             final File file = new File(uniqueName);
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
@@ -283,7 +283,6 @@ public class CameraActivity extends AppCompatActivity {
             Intent i = new Intent(this, ViewCamera.class);
             String key = "imagePath";
             i.putExtra(key, uniqueName);
-            i.putExtra("bytes", bites);
             this.startActivity(i);
         } catch (CameraAccessException e) {
             e.printStackTrace();
