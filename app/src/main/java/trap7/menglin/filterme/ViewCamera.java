@@ -3,11 +3,14 @@ package trap7.menglin.filterme;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -36,14 +39,32 @@ public class ViewCamera extends AppCompatActivity {
         File fdelete = new File(imgPath);
         if (fdelete.exists()) {
             if (fdelete.delete()) {
-                System.out.println("file Deleted :" + imgPath);
+                Toast toast=Toast.makeText(getApplicationContext(),"Image Deleted!", Toast. LENGTH_SHORT);
+                toast.show();
+                Intent i = new Intent(this, CameraActivity.class);
+                this.startActivity(i);
+                this.finish();
             } else {
-                System.out.println("file not Deleted :" + imgPath);
+                Toast toast=Toast.makeText(getApplicationContext(),"Image Not Deleted!", Toast. LENGTH_SHORT);
+                toast.show();
+
             }
         }
     }
-    public void shareImg(View view) throws  IOException{
-
+    public void saveImg(View view) throws  IOException{
+        Bitmap image = BitmapFactory.decodeFile(imgPath);  // Gets the Bitmap
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imagTitle = "FILTERME_"+timeStamp;
+        MediaStore.Images.Media.insertImage(getContentResolver(), image, imagTitle , timeStamp);  // Saves the image.
+        File fdelete = new File(imgPath);
+        if (fdelete.exists()) {
+            fdelete.delete();
+        }
+        Toast toast=Toast.makeText(getApplicationContext(),"Image Saved!", Toast. LENGTH_SHORT);
+        toast.show();
+        Intent i = new Intent(this, CameraActivity.class);
+        this.startActivity(i);
+        this.finish();
     }
 }
 ///can u help me fix a problem
