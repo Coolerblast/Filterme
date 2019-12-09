@@ -1,6 +1,7 @@
 package trap7.menglin.filterme;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -36,6 +37,9 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
+import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -47,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+
 
 public class CameraActivity extends AppCompatActivity {
     private static final String TAG = "AndroidCameraApi";
@@ -76,6 +81,45 @@ public class CameraActivity extends AppCompatActivity {
     private HandlerThread mBackgroundThread;
     private int DSI_height, DSI_width;
     private CameraManager manager;
+    
+    private int getRotationCompensation(String cameraId, Activity activity, Context context)
+        throws CameraAccessException {
+    // Get the device's current rotation relative to its "native" orientation.
+    // Then, from the ORIENTATIONS table, look up the angle the image must be
+    // rotated to compensate for the device's rotation.
+    int deviceRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+    int rotationCompensation = ORIENTATIONS.get(deviceRotation);
+
+    // On most devices, the sensor orientation is 90 degrees, but for some
+    // devices it is 270 degrees. For devices with a sensor orientation of
+    // 270, rotate the image an additional 180 ((270 + 270) % 360) degrees.
+    CameraManager cameraManager = (CameraManager) context.getSystemService(CAMERA_SERVICE);
+    int sensorOrientation = cameraManager
+            .getCameraCharacteristics(cameraId)
+            .get(CameraCharacteristics.SENSOR_ORIENTATION);
+    rotationCompensation = (rotationCompensation + sensorOrientation + 270) % 360;
+
+    // Return the corresponding FirebaseVisionImageMetadata rotation value.
+    int result;
+    switch (rotationCompensation) {
+        case 0:
+            result = FirebaseVisionImageMetadata.ROTATION_0;
+            break;
+        case 90:
+            result = FirebaseVisionImageMetadata.ROTATION_90;
+            break;
+        case 180:
+            result = FirebaseVisionImageMetadata.ROTATION_180;
+            break;
+        case 270:
+            result = FirebaseVisionImageMetadata.ROTATION_270;
+            break;
+        default:
+            result = FirebaseVisionImageMetadata.ROTATION_0;
+            Log.e(TAG, "Bad rotation value: " + rotationCompensation);
+    }
+    return result;
+}
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,6 +138,17 @@ public class CameraActivity extends AppCompatActivity {
                 takePicture();
             }
         });
+        FirebaseVisionFaceDetectorOptions highAccuracyOpts =
+        new FirebaseVisionFaceDetectorOptions.Builder()
+                .setPerformanceMode(FirebaseVisionFaceDetectorOptions.ACCURATE)
+                .setLandmarkMode(FirebaseVisionFaceDetectorOptions.ALL_LANDMARKS)
+                .setClassificationMode(FirebaseVisionFaceDetectorOptions.ALL_CLASSIFICATIONS)
+                .build();
+
+        FirebaseVisionFaceDetectorOptions realTimeOpts =
+        new FirebaseVisionFaceDetectorOptions.Builder()
+                .setContourMode(FirebaseVisionFaceDetectorOptions.ALL_CONTOURS)
+                .build();
 
     }
 
@@ -186,7 +241,7 @@ public class CameraActivity extends AppCompatActivity {
 
     protected void takePicture() {
         if (null == cameraDevice) {
-            Log.e(TAG, "cameraDevice is null");
+            Log.e(TAG, "cameraDevice is null"); 
             return;
         }
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
@@ -295,6 +350,7 @@ public class CameraActivity extends AppCompatActivity {
 
     protected void createCameraPreview() {
         try {
+
             SurfaceTexture texture = textureView.getSurfaceTexture();
             assert texture != null;
             texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());

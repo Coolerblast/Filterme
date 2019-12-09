@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "104005610839",
+    "firebase_url": "https://filterme-3ec30.firebaseio.com",
+    "project_id": "filterme-3ec30",
+    "storage_bucket": "filterme-3ec30.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:104005610839:android:1b3182ab7271084fda6212",
+        "android_client_info": {
+          "package_name": "trap7.menglin.filterme"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "104005610839-m2ge7nv94prffrprmo94o62acnm2bomt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzGG0O9KzqhJA1iuSsvwQermcJdY16Rfc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "104005610839-m2ge7nv94prffrprmo94o62acnm2bomt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
