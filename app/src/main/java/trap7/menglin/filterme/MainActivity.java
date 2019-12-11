@@ -31,15 +31,18 @@ public class MainActivity extends AppCompatActivity {
         // Begin the transaction
         FragmentTransaction ftCamera = getSupportFragmentManager().beginTransaction();
         ftCamera.add(R.id.placeholderCamera, new DetailFragment("Camera", CameraActivity.class));
-
         ftCamera.commit();
+
         FragmentTransaction ftSettings = getSupportFragmentManager().beginTransaction();
         ftSettings.add(R.id.placeholderSettings, new DetailFragment("Settings", SettingsActivity.class));
-
         ftSettings.commit();
+
         FragmentTransaction ftCredits = getSupportFragmentManager().beginTransaction();
         ftCredits.add(R.id.placeholderCredits, new DetailFragment("Credits", CreditsActivity.class));
-
         ftCredits.commit();
+
+        FragmentTransaction ftChat = getSupportFragmentManager().beginTransaction();
+        ftChat.add(R.id.placeholderChat, new DetailFragment("Chat", ChatActivity.class));
+        ftChat.commit();
     }
 }
