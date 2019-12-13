@@ -8,18 +8,24 @@
     android:orientation="vertical"
     tools:context=".ChatActivity">
 
-    <TextView
-        android:id="@+id/chat"
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        />
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/chat_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="500dp"
+        android:overScrollMode="always"
+        android:scrollbars="vertical"
+        app:layout_constraintBottom_toTopOf="@id/sendMessage"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_editor_absoluteX="16dp" />
 
-    <GridLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+    <GridLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/gridChatLayout">
         <EditText
         android:id="@+id/sendMessage"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:layout_width="wrap_content"
             android:hint="Send Message"
+            android:paddingTop="10dp"
+            android:layout_marginBottom="100dp"
         />
         <Button
         android:id="@+id/sendButton"
