@@ -65,8 +65,9 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
         // - replace the contents of the view with that element
 
         String nameandMessage = values.get(position);
-        String[] s = nameandMessage.split(":");
-
+        String[] s = {nameandMessage.substring(0, nameandMessage.indexOf(':')), nameandMessage.substring(nameandMessage.indexOf(':')+1)};
+        if(s.length==1)
+            System.out.println("bruhlmao");
         holder.nameTxt.setText(s[0]);
         holder.msgTxt.setText(s[1]);
     }

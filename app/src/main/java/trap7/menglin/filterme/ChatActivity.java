@@ -27,7 +27,7 @@ import java.util.Map;
 public class ChatActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private RecyclerView.Adapter mAdapter;
-    private RecyclerView.LayoutManager layoutManager;
+    private LinearLayoutManager layoutManager;
     private Button send;
     private EditText message;
     private String username, roomname;
@@ -45,7 +45,10 @@ public class ChatActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.chat_recycler_view);
         recyclerView.setHasFixedSize(true);
         layoutManager = new LinearLayoutManager(this);
+        layoutManager.setStackFromEnd(true);
+        //layoutManager.setReverseLayout(true);
         recyclerView.setLayoutManager(layoutManager);
+
         FirebaseAuth auth = FirebaseAuth.getInstance(); //Initialize cloud firebase authentication
         mAdapter = new ChatAdapter(input);
         recyclerView.setAdapter(mAdapter);
@@ -101,26 +104,30 @@ public class ChatActivity extends AppCompatActivity {
             chatUsername = (String) ((DataSnapshot)i.next()).getValue();
             input.add(chatUsername+":"+chatMsg);
             mAdapter.notifyDataSetChanged();
+            layoutManager.smoothScrollToPosition( recyclerView, null, mAdapter.getItemCount());
+
             //recyclerView.setAdapter(mAdapter);
         }
     }
 
     public void sendMessage(View view) {
-        if(!message.getText().equals("")) {
+        if(!message.getText().toString().equals("")) {
             Map<String, Object> map = new HashMap<String, Object>();
             tempKey = root.push().getKey();
             root.updateChildren(map);
 
             DatabaseReference messageRoot = root.child(tempKey);
             Map<String, Object> map2 = new HashMap<String, Object>();
-            map2.put("name", username);
-            map2.put("msg", message.getText().toString());
-            messageRoot.updateChildren(map2);
-            message.setText("");
-            mAdapter.notifyDataSetChanged();
+            if(!message.getText().toString().equals("")) {
+                map2.put("name", username);
+                map2.put("msg", message.getText().toString().trim());
+                messageRoot.updateChildren(map2);
+                message.setText("");
+                mAdapter.notifyDataSetChanged();
+            }
             //recyclerView.setAdapter(mAdapter);
 
         }
-            }
+    }
 
-        }
+}

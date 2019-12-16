@@ -27,7 +27,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ChatActivity" />
+        <activity android:name=".ChatActivity"  android:windowSoftInputMode="stateVisible|adjustPan"
+            />
         <activity android:name=".ViewCamera" />
         <activity android:name=".CreditsActivity" />
         <activity android:name=".SettingsActivity" />
