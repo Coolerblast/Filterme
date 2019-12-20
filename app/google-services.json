@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "104005610839-977erdieib5mc8j67mdlm8sda73h2a9p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "trap7.menglin.filterme",
+            "certificate_hash": "8c00b5ef6e2a42380ed232625dc3aaa4eaef274e"
+          }
+        },
+        {
           "client_id": "104005610839-m2ge7nv94prffrprmo94o62acnm2bomt.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -12,10 +12,10 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
-public class ChatFragment extends Fragment {
+public class OtherChatFragment extends Fragment {
     private String name;
     private String msg;
-    public ChatFragment(String name, String msg) {
+    public OtherChatFragment(String name, String msg) {
         super();
         this.name = name;
         this.msg = msg;
@@ -34,9 +34,5 @@ public class ChatFragment extends Fragment {
         TextView msgView = (TextView) view.findViewById(R.id.msgView);
         nameView.setText(msg);
     }
-//
-//    public void buttonAction(View view) {
-//        Intent i = new Intent(getContext(), clazz);
-//        this.getContext().startActivity(i);
-//    }
+
 }

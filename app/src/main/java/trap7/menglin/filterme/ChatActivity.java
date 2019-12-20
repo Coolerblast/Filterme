@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
@@ -16,8 +15,9 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,7 +26,7 @@ import java.util.Map;
 
 public class ChatActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
-    private RecyclerView.Adapter mAdapter;
+    private RecyclerView.Adapter otherAdapter;
     private LinearLayoutManager layoutManager;
     private Button send;
     private EditText message;
@@ -50,16 +50,16 @@ public class ChatActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
 
         FirebaseAuth auth = FirebaseAuth.getInstance(); //Initialize cloud firebase authentication
-        mAdapter = new ChatAdapter(input);
-        recyclerView.setAdapter(mAdapter);
+        otherAdapter = new OtherChatAdapter(input);
+        recyclerView.setAdapter(otherAdapter);
         username = auth.getCurrentUser().getDisplayName();
         // roomname = getIntent().getExtras().get("room_name").toString();
 
-        roomname = "vegansociety";
+        roomname = "Chatroom";
         setTitle(" Room - "+roomname);
 
         root = FirebaseDatabase.getInstance().getReference().child(roomname);
-        root.addChildEventListener(new ChildEventListener() {
+        root.limitToLast(50).addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
 
@@ -103,10 +103,10 @@ public class ChatActivity extends AppCompatActivity {
             chatMsg = (String) ((DataSnapshot)i.next()).getValue();
             chatUsername = (String) ((DataSnapshot)i.next()).getValue();
             input.add(chatUsername+":"+chatMsg);
-            mAdapter.notifyDataSetChanged();
-            layoutManager.smoothScrollToPosition( recyclerView, null, mAdapter.getItemCount());
+            otherAdapter.notifyDataSetChanged();
+            layoutManager.smoothScrollToPosition( recyclerView, null, otherAdapter.getItemCount());
 
-            //recyclerView.setAdapter(mAdapter);
+            //recyclerView.setAdapter(otherAdapter);
         }
     }
 
@@ -123,9 +123,9 @@ public class ChatActivity extends AppCompatActivity {
                 map2.put("msg", message.getText().toString().trim());
                 messageRoot.updateChildren(map2);
                 message.setText("");
-                mAdapter.notifyDataSetChanged();
+                otherAdapter.notifyDataSetChanged();
             }
-            //recyclerView.setAdapter(mAdapter);
+            //recyclerView.setAdapter(otherAdapter);
 
         }
     }
