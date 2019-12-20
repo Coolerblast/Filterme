@@ -39,9 +39,12 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.ml.vision.FirebaseVision;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
+import com.google.firebase.ml.vision.face.FirebaseVisionFace;
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetector;
 import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions;
 
@@ -449,8 +452,23 @@ public class CameraActivity extends AppCompatActivity {
             .setClassificationMode(FirebaseVisionFaceDetectorOptions.ALL_CLASSIFICATIONS)
             .setLandmarkMode(FirebaseVisionFaceDetectorOptions.ALL_LANDMARKS)
             .build();
+    FirebaseVisionFaceDetector detector = FirebaseVision.getInstance().getVisionFaceDetector(options);
+       Task result = detector
+                .detectInImage(image)
+                .addOnSuccessListener(new
+                                              OnSuccessListener<List<FirebaseVisionFace>>() {
+                                                  @Override
+                                                  public void onSuccess(List<FirebaseVisionFace> faces) {
+                                                      for (FirebaseVisionFace face : faces) {
+                                                          Log.d(TAG, "****************************");
+                                                          Log.d(TAG, "face ["+face+"]");
+                                                          checkLandMarks(face);
+                                                      }
+                                                  }
+                                              });
+    }
+    public void checkLandMarks(FirebaseVisionFace face){}
 
-}
     private void closeCamera() {
         if (null != cameraDevice) {
             cameraDevice.close();
