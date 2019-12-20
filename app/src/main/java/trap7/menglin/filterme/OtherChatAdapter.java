@@ -22,8 +22,8 @@ public class OtherChatAdapter extends RecyclerView.Adapter<OtherChatAdapter.View
         public ViewHolder(View v) {
             super(v);
             layout = v;
-            nameTxt = (TextView) v.findViewById(R.id.nameView);
-            msgTxt = (TextView) v.findViewById(R.id.msgView);
+            nameTxt = (TextView) v.findViewById(R.id.message_name);
+            msgTxt = (TextView) v.findViewById(R.id.message_body);
         }
     }
 
@@ -50,7 +50,7 @@ public class OtherChatAdapter extends RecyclerView.Adapter<OtherChatAdapter.View
         LayoutInflater inflater = LayoutInflater.from(
                 parent.getContext());
         View v =
-                inflater.inflate(R.layout.activity_chat_fragment, parent, false);
+                inflater.inflate(R.layout.item_message_sent, parent, false);
         // set the view's size, margins, paddings and layout parameters
         ViewHolder vh = new ViewHolder(v);
         return vh;
