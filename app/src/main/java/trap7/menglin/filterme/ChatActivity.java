@@ -59,7 +59,7 @@ public class ChatActivity extends AppCompatActivity {
         setTitle(" Room - "+roomname);
 
         root = FirebaseDatabase.getInstance().getReference().child(roomname);
-        root.addChildEventListener(new ChildEventListener() {
+        root.limitToLast(50).addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
 
