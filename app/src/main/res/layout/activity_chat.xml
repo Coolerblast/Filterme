@@ -18,7 +18,7 @@
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:layout_alignParentLeft="true"
-            android:text="<"
+            android:text="B"
             android:textSize="20dp"
             android:textAlignment="center"
             />
@@ -38,13 +38,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/chatBar"
+        android:layout_above="@id/messageBar"
         android:overScrollMode="always"
         android:scrollbars="vertical"
         app:reverseLayout="true"
         tools:layout_editor_absoluteX="16dp" />
 
     <LinearLayout
-        android:id="@+id/gridChatLayout"
+        android:id="@+id/messageBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"

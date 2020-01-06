@@ -16,8 +16,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -50,9 +48,9 @@ public class ChatActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
 
         FirebaseAuth auth = FirebaseAuth.getInstance(); //Initialize cloud firebase authentication
-        otherAdapter = new OtherChatAdapter(input);
-        recyclerView.setAdapter(otherAdapter);
         username = auth.getCurrentUser().getDisplayName();
+        otherAdapter = new ChatAdapter(input, username);
+        recyclerView.setAdapter(otherAdapter);
         // roomname = getIntent().getExtras().get("room_name").toString();
 
         roomname = "Chatroom";

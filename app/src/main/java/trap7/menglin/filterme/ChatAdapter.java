@@ -9,9 +9,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-public class OtherChatAdapter extends RecyclerView.Adapter<OtherChatAdapter.ViewHolder> {
+public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
     private List<String> values;
-
+    private String username;
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
@@ -19,6 +19,7 @@ public class OtherChatAdapter extends RecyclerView.Adapter<OtherChatAdapter.View
         // each data item is just a string in this case
         public TextView nameTxt, msgTxt;
         public View layout;
+
         public ViewHolder(View v) {
             super(v);
             layout = v;
@@ -26,26 +27,16 @@ public class OtherChatAdapter extends RecyclerView.Adapter<OtherChatAdapter.View
             msgTxt = (TextView) v.findViewById(R.id.message_body);
         }
     }
-
-    public void add(int position, String item) {
-        values.add(position, item);
-        notifyItemInserted(position);
-    }
-
-    public void remove(int position) {
-        values.remove(position);
-        notifyItemRemoved(position);
-    }
-
     // Provide a suitable constructor (depends on the kind of dataset)
-    public OtherChatAdapter(List<String> myDataset) {
+    public ChatAdapter(List<String> myDataset, String username) {
         values = myDataset;
+        this.username = username;
     }
 
     // Create new views (invoked by the layout manager)
     @Override
-    public OtherChatAdapter.ViewHolder onCreateViewHolder(ViewGroup parent,
-                                                          int viewType) {
+    public ChatAdapter.ViewHolder onCreateViewHolder(ViewGroup parent,
+                                                     int viewType) {
         // create a new view
         LayoutInflater inflater = LayoutInflater.from(
                 parent.getContext());
@@ -56,7 +47,10 @@ public class OtherChatAdapter extends RecyclerView.Adapter<OtherChatAdapter.View
         return vh;
     }
 
-
+    @Override
+    public int getItemViewType(int position){
+        return position;
+    }
     // Replace the contents of a view (invoked by the layout manager)
     @Override
     public void onBindViewHolder(ViewHolder holder, final int position) {
@@ -64,10 +58,9 @@ public class OtherChatAdapter extends RecyclerView.Adapter<OtherChatAdapter.View
         // - replace the contents of the view with that element
 
         String nameandMessage = values.get(position);
-        String[] s = {nameandMessage.substring(0, nameandMessage.indexOf(':')), nameandMessage.substring(nameandMessage.indexOf(':')+1)};
-        if(s.length==1)
-            System.out.println("bruhlmao");
-        holder.nameTxt.setText(s[0]);
+        String[] s = {nameandMessage.substring(0, nameandMessage.indexOf(':')), nameandMessage.substring(nameandMessage.indexOf(':') + 1)};
+        if (holder.nameTxt != null)
+            holder.nameTxt.setText(s[0]);
         holder.msgTxt.setText(s[1]);
     }
 
