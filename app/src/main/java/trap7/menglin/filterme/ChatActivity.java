@@ -41,7 +41,7 @@ public class ChatActivity extends AppCompatActivity {
         send = (Button) findViewById(R.id.sendButton);
         message = (EditText) findViewById(R.id.sendMessage);
         recyclerView = findViewById(R.id.chat_recycler_view);
-        recyclerView.setHasFixedSize(true);
+        recyclerView.setHasFixedSize(false);
         layoutManager = new LinearLayoutManager(this);
         layoutManager.setStackFromEnd(true);
         //layoutManager.setReverseLayout(true);
@@ -52,6 +52,15 @@ public class ChatActivity extends AppCompatActivity {
         otherAdapter = new ChatAdapter(input, username);
         recyclerView.setAdapter(otherAdapter);
         // roomname = getIntent().getExtras().get("room_name").toString();
+
+
+//        recyclerView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+//
+//            @Override
+//            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+//                recyclerView.smoothScrollToPosition(otherAdapter.getItemCount());
+//            }
+//        });
 
         roomname = "Chatroom";
         setTitle(" Room - "+roomname);
@@ -102,7 +111,7 @@ public class ChatActivity extends AppCompatActivity {
             chatUsername = (String) ((DataSnapshot)i.next()).getValue();
             input.add(chatUsername+":"+chatMsg);
             otherAdapter.notifyDataSetChanged();
-            layoutManager.smoothScrollToPosition( recyclerView, null, otherAdapter.getItemCount());
+            //layoutManager.smoothScrollToPosition( recyclerView, null, otherAdapter.getItemCount());
 
             //recyclerView.setAdapter(otherAdapter);
         }

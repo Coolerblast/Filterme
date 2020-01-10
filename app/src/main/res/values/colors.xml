@@ -5,6 +5,6 @@
     <color name="colorAccent">#D81B60</color>
 
     <color name="messageSendBoxColor">#2196F3</color>
-    <color name="messageRecieveBoxColor">#888888</color>
+    <color name="messageRecieveBoxColor">#C9C9C9</color>
 
 </resources>

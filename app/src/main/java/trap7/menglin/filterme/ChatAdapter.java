@@ -41,7 +41,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
         LayoutInflater inflater = LayoutInflater.from(
                 parent.getContext());
         View v =
-                inflater.inflate(R.layout.item_message_sent, parent, false);
+                inflater.inflate(viewType == 0 ? R.layout.item_message_sent : R.layout.item_message_recieved, parent, false);
         // set the view's size, margins, paddings and layout parameters
         ViewHolder vh = new ViewHolder(v);
         return vh;
@@ -49,7 +49,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
 
     @Override
     public int getItemViewType(int position){
-        return position;
+        return values.get(position).substring(0, values.get(position).indexOf(':')).equals(username) ? 0 : 1;
     }
     // Replace the contents of a view (invoked by the layout manager)
     @Override
@@ -57,8 +57,8 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
 
-        String nameandMessage = values.get(position);
-        String[] s = {nameandMessage.substring(0, nameandMessage.indexOf(':')), nameandMessage.substring(nameandMessage.indexOf(':') + 1)};
+        String nameAndMessage = values.get(position);
+        String[] s = {nameAndMessage.substring(0, nameAndMessage.indexOf(':')), nameAndMessage.substring(nameAndMessage.indexOf(':') + 1)};
         if (holder.nameTxt != null)
             holder.nameTxt.setText(s[0]);
         holder.msgTxt.setText(s[1]);
