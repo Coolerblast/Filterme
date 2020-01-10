@@ -1,567 +1,146 @@
 package trap7.menglin.filterme;
 
-import android.Manifest;
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.ImageFormat;
-import android.graphics.SurfaceTexture;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.CameraDevice;
-import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CameraMetadata;
-import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.TotalCaptureResult;
-import android.hardware.camera2.params.StreamConfigurationMap;
-import android.media.Image;
-import android.media.ImageReader;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.util.DisplayMetrics;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
-import android.util.Size;
-import android.util.SparseIntArray;
-import android.view.Surface;
-import android.view.TextureView;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
-import android.widget.Button;
-import android.widget.RelativeLayout;
-import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.ml.vision.FirebaseVision;
-import com.google.firebase.ml.vision.common.FirebaseVisionImage;
-import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
-import com.google.firebase.ml.vision.face.FirebaseVisionFace;
-import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetector;
-import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions;
+import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.MultiProcessor;
+import com.google.android.gms.vision.face.FaceDetector;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.Calendar;
 
+import static android.os.Environment.getExternalStorageDirectory;
+import static java.io.File.separator;
 
 public class CameraActivity extends AppCompatActivity {
-    private static final String TAG = "AndroidCameraApi";
-    private Button takePictureButton;
-    private TextureView textureView;
-    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
-
-    static {
-        ORIENTATIONS.append(Surface.ROTATION_0, 0);
-        ORIENTATIONS.append(Surface.ROTATION_90, 90);
-        ORIENTATIONS.append(Surface.ROTATION_180, 180);
-        ORIENTATIONS.append(Surface.ROTATION_270, 270);
-    }
-
-    private String cameraId;
-    protected CameraDevice cameraDevice;
-    protected CameraCaptureSession cameraCaptureSessions;
-    protected CaptureRequest captureRequest;
-    protected CaptureRequest.Builder captureRequestBuilder;
-    private Size imageDimension;
-    private ImageReader imageReader;
-    private File file;
-    private static final int REQUEST_CAMERA_PERMISSION = 200;
-    private static final int REQUEST_WRITE_PERMISSION = 100;
-    private boolean mFlashSupported;
-    private Handler mBackgroundHandler;
-    private HandlerThread mBackgroundThread;
-    private int DSI_height, DSI_width;
-    private CameraManager manager;
-    
-    private int getRotationCompensation(String cameraId, Activity activity, Context context)
-        throws CameraAccessException {
-    // Get the device's current rotation relative to its "native" orientation.
-    // Then, from the ORIENTATIONS table, look up the angle the image must be
-    // rotated to compensate for the device's rotation.
-    int deviceRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-    int rotationCompensation = ORIENTATIONS.get(deviceRotation);
-
-    // On most devices, the sensor orientation is 90 degrees, but for some
-    // devices it is 270 degrees. For devices with a sensor orientation of
-    // 270, rotate the image an additional 180 ((270 + 270) % 360) degrees.
-    CameraManager cameraManager = (CameraManager) context.getSystemService(CAMERA_SERVICE);
-    int sensorOrientation = cameraManager
-            .getCameraCharacteristics(cameraId)
-            .get(CameraCharacteristics.SENSOR_ORIENTATION);
-    rotationCompensation = (rotationCompensation + sensorOrientation + 270) % 360;
-
-    // Return the corresponding FirebaseVisionImageMetadata rotation value.
-    int result;
-    switch (rotationCompensation) {
-        case 0:
-            result = FirebaseVisionImageMetadata.ROTATION_0;
-            break;
-        case 90:
-            result = FirebaseVisionImageMetadata.ROTATION_90;
-            break;
-        case 180:
-            result = FirebaseVisionImageMetadata.ROTATION_180;
-            break;
-        case 270:
-            result = FirebaseVisionImageMetadata.ROTATION_270;
-            break;
-        default:
-            result = FirebaseVisionImageMetadata.ROTATION_0;
-            Log.e(TAG, "Bad rotation value: " + rotationCompensation);
-    }
-    return result;
-}
+    CameraSource mCameraSource;
+    FaceDetector mDetector;
+    Vibrator vibrator;
+    SurfaceView cameraView;
+    Matrix matrix = new Matrix();
+    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+    Calendar c = Calendar.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        matrix.postRotate(90);
 
         setContentView(R.layout.activity_camera);
-        textureView = (TextureView) findViewById(R.id.texture);
-        assert textureView != null;
-        textureView.setSurfaceTextureListener(textureListener);
-        takePictureButton = (Button) findViewById(R.id.takePicBtn);
-        assert takePictureButton != null;
-        takePictureButton.setOnClickListener(new View.OnClickListener() {
+        mDetector = new FaceDetector.Builder(this).setLandmarkType(FaceDetector.ALL_LANDMARKS).build();
+//        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+//        vibrator.vibrate(VibrationEffect.createOneShot(10000, 100));
+        cameraView = (SurfaceView) findViewById(R.id.cameraView);
+        mCameraSource = new CameraSource.Builder(this, mDetector).setAutoFocusEnabled(true).build();
+
+        cameraView.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
-            public void onClick(View v) {
-                takePicture();
+            public void surfaceCreated(SurfaceHolder surfaceHolder) {
+                restartCamera();
+            }
+
+            @Override
+            public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+                mCameraSource.stop();
             }
         });
-        FirebaseVisionFaceDetectorOptions highAccuracyOpts =
-        new FirebaseVisionFaceDetectorOptions.Builder()
-                .setPerformanceMode(FirebaseVisionFaceDetectorOptions.ACCURATE)
-                .setLandmarkMode(FirebaseVisionFaceDetectorOptions.ALL_LANDMARKS)
-                .setClassificationMode(FirebaseVisionFaceDetectorOptions.ALL_CLASSIFICATIONS)
-                .build();
-
-        FirebaseVisionFaceDetectorOptions realTimeOpts =
-        new FirebaseVisionFaceDetectorOptions.Builder()
-                .setContourMode(FirebaseVisionFaceDetectorOptions.ALL_CONTOURS)
-                .build();
 
     }
 
-    TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
-        @Override
-        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-            //open your camera here
-            openCamera();
-        }
+    public void swapCamera(View v){
+        mCameraSource.stop();
+        mCameraSource = new CameraSource.Builder(this, mDetector).setFacing((mCameraSource.getCameraFacing() + 1) % 2).setAutoFocusEnabled(true).build();
+        matrix.postRotate(180);
 
-        @Override
-        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-            // Transform you image captured size according to the surface width and height
-        }
-
-        @Override
-        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-            return false;
-        }
-
-        @Override
-        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-        }
-    };
-    private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
-        @Override
-        public void onOpened(CameraDevice camera) {
-            //This is called when the camera is open
-            Log.e(TAG, "onOpened");
-            cameraDevice = camera;
-            createCameraPreview();
-        }
-
-        @Override
-        public void onDisconnected(CameraDevice camera) {
-            cameraDevice.close();
-        }
-
-        @Override
-        public void onError(CameraDevice camera, int error) {
-            cameraDevice.close();
-            cameraDevice = null;
-        }
-    };
-    final CameraCaptureSession.CaptureCallback captureCallbackListener = new CameraCaptureSession.CaptureCallback() {
-        @Override
-        public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
-            super.onCaptureCompleted(session, request, result);
-            Toast.makeText(CameraActivity.this, "Saved:" + file, Toast.LENGTH_SHORT).show();
-            createCameraPreview();
-        }
-    };
-
-    private void setAspectRatioTextureView(int ResolutionWidth, int ResolutionHeight) {
-        if (ResolutionWidth > ResolutionHeight) {
-            int newWidth = DSI_width;
-            int newHeight = ((DSI_width * ResolutionWidth) / ResolutionHeight);
-            updateTextureViewSize(newWidth, newHeight);
-
-        } else {
-            int newWidth = DSI_width;
-            int newHeight = ((DSI_width * ResolutionHeight) / ResolutionWidth);
-            updateTextureViewSize(newWidth, newHeight);
-        }
-
+        restartCamera();
     }
-
-    private void updateTextureViewSize(int viewWidth, int viewHeight) {
-        Log.d(TAG, "TextureView Width : " + viewWidth + " TextureView Height : " + viewHeight);
-        textureView.setLayoutParams(new RelativeLayout.LayoutParams(viewWidth, viewHeight));
-    }
-
-    protected void startBackgroundThread() {
-        mBackgroundThread = new HandlerThread("Camera Background");
-        mBackgroundThread.start();
-        mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
-    }
-
-    protected void stopBackgroundThread() {
-        mBackgroundThread.quitSafely();
+    public void restartCamera(){
         try {
-            mBackgroundThread.join();
-            mBackgroundThread = null;
-            mBackgroundHandler = null;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            mCameraSource.start(cameraView.getHolder());
+        } catch (IOException ie) {
+            Log.e("CAMERA SOURCE", ie.getMessage());
         }
     }
-    byte[] bites;
+    public void takePicture(View view){
+        mCameraSource.takePicture(null , new
+                CameraSource.PictureCallback() {
+                    @Override
+                    public void onPictureTaken(byte[] bytes) {
+                        // Generate the Face Bitmap
+                        BitmapFactory.Options options = new BitmapFactory.Options();
+                        Bitmap face = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
+                        // Generate the Eyes Overlay Bitmap
+                        cameraView.setDrawingCacheEnabled(true);
+                        Bitmap overlay = cameraView.getDrawingCache();
 
-    protected void takePicture() {
-        if (null == cameraDevice) {
-            Log.e(TAG, "cameraDevice is null"); 
-            return;
-        }
-        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        try {
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
-            Size[] jpegSizes = null;
-            if (characteristics != null) {
-                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
-            }
-            int width = 1080;
-            int height = 920;
-            if (jpegSizes != null && 0 < jpegSizes.length) {
-                width = jpegSizes[0].getWidth();
-                height = jpegSizes[0].getHeight();
-            }
-            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
-            List<Surface> outputSurfaces = new ArrayList<Surface>(2);
-            outputSurfaces.add(reader.getSurface());
-            outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
-            final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
-            captureBuilder.addTarget(reader.getSurface());
-            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-            // Orientation
-            int rotation = getWindowManager().getDefaultDisplay().getRotation();
-            if(cameraId.equals(manager.getCameraIdList()[CameraCharacteristics.LENS_FACING_FRONT]))
-                rotation = 90;
-            System.out.println(rotation);
+                        // Generate the final merged image
+                        Bitmap unrotatedpos = mergeBitmaps(face, overlay);
+                        Bitmap result = Bitmap.createBitmap(unrotatedpos, 0, 0, unrotatedpos.getWidth(), unrotatedpos.getHeight(), matrix, true);
+                        // Save result image to file
+                        try {
+                            String mainpath = getExternalStorageDirectory() + separator + "Pictures" + separator + "Filterme" + separator;
+                            File basePath = new File(mainpath);
+                            if (!basePath.exists())
+                                Log.d("CAPTURE_BASE_PATH", basePath.mkdirs() ? "Success": "Failed");
+                            String path = mainpath + "photo_" + getPhotoTime() + ".jpg";
+                            File captureFile = new File(path);
+                            captureFile.createNewFile();
+                            if (!captureFile.exists())
+                                Log.d("CAPTURE_FILE_PATH", captureFile.createNewFile() ? "Success": "Failed");
+                            FileOutputStream stream = new FileOutputStream(captureFile);
+                            result.compress(Bitmap.CompressFormat.JPEG, 100, stream);
 
-
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-
-
-            File root = Environment.getExternalStorageDirectory();
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-            String imgName = "/FILTERME_"+timeStamp+"_";
-            String uniqueName =root.getAbsolutePath()+imgName+".jpg";
-            final File file = new File(uniqueName);
-            ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
-                @Override
-                public void onImageAvailable(ImageReader reader) {
-
-                    Image image = null;
-                    try {
-                        image = reader.acquireLatestImage();
-
-                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                        byte[] bytes = new byte[buffer.capacity()];
-                        buffer.get(bytes);
-                        save(bytes);
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } finally {
-                        if (image != null) {
-                            image.close();
+                            stream.flush();
+                            stream.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
                     }
-                }
-
-                private void save(byte[] bytes) throws IOException {
-                    OutputStream output = null;
-                    try {
-                        output = new FileOutputStream(file);
-                        output.write(bytes);
-                        bites = bytes;
-                    } finally {
-                        if (null != output) {
-                            output.close();
-                        }
-                    }
-                }
-            };
-            reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
-            final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
-                @Override
-                public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
-                    super.onCaptureCompleted(session, request, result);
-                    Toast.makeText(CameraActivity.this, "Saved:" + file, Toast.LENGTH_SHORT).show();
-                    createCameraPreview();
-                }
-            };
-            cameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
-                @Override
-                public void onConfigured(CameraCaptureSession session) {
-                    try {
-                        session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
-                    } catch (CameraAccessException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                @Override
-                public void onConfigureFailed(CameraCaptureSession session) {
-                }
-            }, mBackgroundHandler);
-            Intent i = new Intent(this, ViewCamera.class);
-            String key = "imagePath";
-            i.putExtra(key, uniqueName);
-            this.startActivity(i);
-            this.finish();
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
+                });
     }
+    public String getPhotoTime(){
 
-    protected void createCameraPreview() {
-        try {
+         return df.format(c.getTime());
 
-            SurfaceTexture texture = textureView.getSurfaceTexture();
-            assert texture != null;
-            texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
-            Surface surface = new Surface(texture);
-            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            captureRequestBuilder.addTarget(surface);
-            cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
-                @Override
-                public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
-                    //The camera is already closed
-                    if (null == cameraDevice) {
-                        return;
-                    }
-                    // When the session is ready, we start displaying the preview.
-                    cameraCaptureSessions = cameraCaptureSession;
-                    updatePreview();
-                }
-
-                @Override
-                public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-                    Toast.makeText(CameraActivity.this, "Configuration change", Toast.LENGTH_SHORT).show();
-                }
-            }, null);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
     }
+    public Bitmap mergeBitmaps(Bitmap face, Bitmap overlay) {
+        // Create a new image with target size
+        int width = face.getWidth();
+        int height = face.getHeight();
+        Bitmap newBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
-    private void openCamera() {
-        manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        Log.e(TAG, "is camera open");
-        try {
-            cameraId = manager.getCameraIdList()[CameraCharacteristics.LENS_FACING_BACK];
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            assert map != null;
-            imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
-            DisplayMetrics displayMetrics = new DisplayMetrics();
-            getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-            DSI_height = displayMetrics.heightPixels;
-            DSI_width = displayMetrics.widthPixels;
-            setAspectRatioTextureView(imageDimension.getHeight(), imageDimension.getWidth());
-            // Add permission for camera and let user grant the permission
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(CameraActivity.this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
-                return;
-            }
-            manager.openCamera(cameraId, stateCallback, null);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-        Log.e(TAG, "openCamera X");
-    }
+        Rect faceRect = new Rect(0,0,width,height);
+        Rect overlayRect = new Rect(0,0,overlay.getWidth(),overlay.getHeight());
 
-    protected void updatePreview() {
-        if (null == cameraDevice) {
-            Log.e(TAG, "updatePreview error, return");
-        }
-
-        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-        try {
-            cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
-            ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
-                @Override
-                public void onImageAvailable(ImageReader reader) {
-
-                    Image image = null;
-                    try {
-                        image = reader.acquireLatestImage();
-
-                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                        byte[] bytes = new byte[buffer.capacity()];
-                        buffer.get(bytes);
-                    }
-                    finally {
-                        if (image != null) {
-                            image.close();
-                        }
-                    }
-                }
-            };
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void detectFace(byte[] b){
-    Bitmap bitmap = BitmapFactory.decodeByteArray(b, 0, b.length);
-    FirebaseVisionImage image = FirebaseVisionImage.fromBitmap(bitmap);
-    FirebaseVisionFaceDetectorOptions options = new FirebaseVisionFaceDetectorOptions.Builder()
-            .setClassificationMode(FirebaseVisionFaceDetectorOptions.ALL_CLASSIFICATIONS)
-            .setLandmarkMode(FirebaseVisionFaceDetectorOptions.ALL_LANDMARKS)
-            .build();
-    FirebaseVisionFaceDetector detector = FirebaseVision.getInstance().getVisionFaceDetector(options);
-       Task result = detector
-                .detectInImage(image)
-                .addOnSuccessListener(new
-                                              OnSuccessListener<List<FirebaseVisionFace>>() {
-                                                  @Override
-                                                  public void onSuccess(List<FirebaseVisionFace> faces) {
-                                                      for (FirebaseVisionFace face : faces) {
-                                                          Log.d(TAG, "****************************");
-                                                          Log.d(TAG, "face ["+face+"]");
-                                                          checkLandMarks(face);
-                                                      }
-                                                  }
-                                              });
-    }
-    public void checkLandMarks(FirebaseVisionFace face){}
-
-    private void closeCamera() {
-        if (null != cameraDevice) {
-            cameraDevice.close();
-            cameraDevice = null;
-        }
-        if (null != imageReader) {
-            imageReader.close();
-            imageReader = null;
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == REQUEST_CAMERA_PERMISSION) {
-            if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                // close the app
-                Toast.makeText(CameraActivity.this, "Sorry!!!, you can't use this app without granting permission", Toast.LENGTH_LONG).show();
-                finish();
-            }
-        }
-        if(requestCode == REQUEST_WRITE_PERMISSION){
-            if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                // close the app
-                Toast.makeText(CameraActivity.this, "Sorry!!!, you can't use this app without granting permission", Toast.LENGTH_LONG).show();
-                finish();
-            }
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.e(TAG, "onResume");
-        startBackgroundThread();
-        if (textureView.isAvailable()) {
-            openCamera();
-        } else {
-            textureView.setSurfaceTextureListener(textureListener);
-        }
-    }
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-        Log.e(TAG, "onRestart");
-        startBackgroundThread();
-        if (textureView.isAvailable()) {
-            openCamera();
-        } else {
-            textureView.setSurfaceTextureListener(textureListener);
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        Log.e(TAG, "onPause");
-        closeCamera();
-        stopBackgroundThread();
-        super.onPause();
+        // Draw face and then overlay (Make sure rects are as needed)
+        Canvas canvas = new Canvas(newBitmap);
+        canvas.drawBitmap(face, faceRect, faceRect, null);
+        canvas.drawBitmap(overlay, overlayRect, faceRect, null);
+        return newBitmap;
     }
 
 
-    public void swapCamera(View view) {
-        try {
-            if (cameraId.equals(manager.getCameraIdList()[CameraCharacteristics.LENS_FACING_BACK])) {
-                cameraId = manager.getCameraIdList()[CameraCharacteristics.LENS_FACING_FRONT];
-                closeCamera();
-                reopenCamera();
-
-            } else if (cameraId.equals(manager.getCameraIdList()[CameraCharacteristics.LENS_FACING_FRONT])) {
-                cameraId = manager.getCameraIdList()[CameraCharacteristics.LENS_FACING_BACK];
-                closeCamera();
-                reopenCamera();
-            }
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void reopenCamera() throws CameraAccessException{
-        CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-        StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-        assert map != null;
-        imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        DSI_height = displayMetrics.heightPixels;
-        DSI_width = displayMetrics.widthPixels;
-        setAspectRatioTextureView(imageDimension.getHeight(), imageDimension.getWidth());
-        // Add permission for camera and let user grant the permission
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(CameraActivity.this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
-            return;
-        }
-        manager.openCamera(cameraId, stateCallback, null);
-    }
 }

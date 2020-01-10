@@ -10,8 +10,8 @@
     android:layout_height="fill_parent"
     android:layout_weight="1">
 
-    <TextureView
-      android:id="@+id/texture"
+    <SurfaceView
+      android:id="@+id/cameraView"
       android:layout_width="match_parent"
       android:layout_height="match_parent"
       />
@@ -20,16 +20,17 @@
         android:id="@+id/swapCamBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBottom="@id/texture"
+        android:layout_alignBottom="@id/cameraView"
         android:onClick="swapCamera"
-        android:layout_alignRight="@id/texture"
+        android:layout_alignRight="@id/cameraView"
         android:text="SWAP" />
     <Button
         android:id="@+id/takePicBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBottom="@id/texture"
+        android:layout_alignBottom="@id/cameraView"
         android:layout_centerHorizontal="true"
+        android:onClick="takePicture"
         android:text="Capture" />
   </RelativeLayout>
 

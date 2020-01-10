@@ -30,8 +30,10 @@ public class LoginActivity extends AppCompatActivity {
     TextView login;
     EditText edtEmail;
     EditText edtPassword;
+    boolean loggedin;
     SharedPreferences.Editor editor;
     SharedPreferences pref;
+    String email, password;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -39,17 +41,26 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         auth = FirebaseAuth.getInstance();
         pref = PreferenceManager.getDefaultSharedPreferences(this);
-
+        if(pref.getBoolean("loggedin", false))
+        {
+            email = pref.getString("email", email);
+            password = pref.getString("password", password);
+            login();
+        }
         edtEmail = findViewById(R.id.edtEmail);
         edtPassword = findViewById(R.id.edtPassword);
         btnLogin = findViewById(R.id.btnLogin);
-
+        loggedin = false;
         btnSignUp = findViewById(R.id.btnSignUp);
     }
     public void onClick(View view){
         switch (view.getId()){
             case R.id.btnLogin:
+                email = edtEmail.getText().toString().trim();
+                password = edtPassword.getText().toString().trim();
                 login();
+
+
                 break;
             case R.id.btnSignUp:
                 startActivity(new Intent(this, SignUpActivity.class));
@@ -57,9 +68,6 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
     private void login() {
-        String email = edtEmail.getText().toString().trim();
-        String password = edtPassword.getText().toString().trim();
-
         /*
         Check for empty fields to avoid exception
          */
@@ -78,13 +86,27 @@ public class LoginActivity extends AppCompatActivity {
                         if(task.isSuccessful()){
                             user = auth.getCurrentUser();
                             Toast.makeText(LoginActivity.this, "Login successful", Toast.LENGTH_LONG).show();
+                            loggedin = true;
                             startActivity(new Intent(LoginActivity.this, MainActivity.class));
                             finish();
+
                         }
                         else{
                             Toast.makeText(LoginActivity.this, "Login unsuccessful. Check details", Toast.LENGTH_LONG).show();
                         }
                     }
                 });
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        editor = pref.edit();
+        if(loggedin) {
+            editor.putBoolean("loggedin", true);
+            editor.putString("email", email);
+            editor.putString("password", password);
+        }
+        editor.apply();
     }
 }
