@@ -36,16 +36,20 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chat_recycler_view"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="true"
         android:layout_below="@id/chatBar"
         android:layout_above="@id/messageBar"
         android:overScrollMode="always"
         android:scrollbars="vertical"
+        app:stackFromEnd="true"
         app:reverseLayout="true"
         tools:layout_editor_absoluteX="16dp" />
 
     <LinearLayout
         android:id="@+id/messageBar"
+        android:layout_alignParentEnd="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"

@@ -111,7 +111,7 @@ public class ChatActivity extends AppCompatActivity {
             chatUsername = (String) ((DataSnapshot)i.next()).getValue();
             input.add(chatUsername+":"+chatMsg);
             otherAdapter.notifyDataSetChanged();
-            //layoutManager.smoothScrollToPosition( recyclerView, null, otherAdapter.getItemCount());
+            layoutManager.smoothScrollToPosition( recyclerView, null, otherAdapter.getItemCount());
 
             //recyclerView.setAdapter(otherAdapter);
         }

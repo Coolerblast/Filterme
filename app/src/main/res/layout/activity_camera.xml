@@ -15,7 +15,10 @@
       android:layout_width="match_parent"
       android:layout_height="match_parent"
       />
-
+    <trap7.menglin.filterme.GraphicOverlay
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+      android:id="@+id/faceOverlay"/>
     <Button
         android:id="@+id/swapCamBtn"
         android:layout_width="wrap_content"

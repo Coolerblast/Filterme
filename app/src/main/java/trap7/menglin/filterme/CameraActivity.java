@@ -18,8 +18,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.MultiProcessor;
+import com.google.android.gms.vision.Tracker;
+import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -37,19 +38,27 @@ public class CameraActivity extends AppCompatActivity {
     Matrix matrix = new Matrix();
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
     Calendar c = Calendar.getInstance();
+     GraphicOverlay mGraphicOverlay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         matrix.postRotate(90);
+        mGraphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
 
         setContentView(R.layout.activity_camera);
-        mDetector = new FaceDetector.Builder(this).setLandmarkType(FaceDetector.ALL_LANDMARKS).build();
+        mDetector = new FaceDetector.Builder(getApplicationContext()).setLandmarkType(FaceDetector.ALL_LANDMARKS).build();
 //        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 //        vibrator.vibrate(VibrationEffect.createOneShot(10000, 100));
+        mDetector.setProcessor(
+                new MultiProcessor.Builder<Face>(new GraphicFaceTrackerFactory()).build()
+        );
         cameraView = (SurfaceView) findViewById(R.id.cameraView);
-        mCameraSource = new CameraSource.Builder(this, mDetector).setAutoFocusEnabled(true).build();
+        mDetector.setProcessor(
+                new MultiProcessor.Builder<>(new GraphicFaceTrackerFactory())
+                        .build());
+        mCameraSource = new CameraSource.Builder(getApplicationContext(), mDetector).setAutoFocusEnabled(true).build();
 
         cameraView.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
@@ -70,22 +79,24 @@ public class CameraActivity extends AppCompatActivity {
 
     }
 
-    public void swapCamera(View v){
+    public void swapCamera(View v) {
         mCameraSource.stop();
         mCameraSource = new CameraSource.Builder(this, mDetector).setFacing((mCameraSource.getCameraFacing() + 1) % 2).setAutoFocusEnabled(true).build();
         matrix.postRotate(180);
 
         restartCamera();
     }
-    public void restartCamera(){
+
+    public void restartCamera() {
         try {
             mCameraSource.start(cameraView.getHolder());
         } catch (IOException ie) {
             Log.e("CAMERA SOURCE", ie.getMessage());
         }
     }
-    public void takePicture(View view){
-        mCameraSource.takePicture(null , new
+
+    public void takePicture(View view) {
+        mCameraSource.takePicture(null, new
                 CameraSource.PictureCallback() {
                     @Override
                     public void onPictureTaken(byte[] bytes) {
@@ -104,12 +115,12 @@ public class CameraActivity extends AppCompatActivity {
                             String mainpath = getExternalStorageDirectory() + separator + "Pictures" + separator + "Filterme" + separator;
                             File basePath = new File(mainpath);
                             if (!basePath.exists())
-                                Log.d("CAPTURE_BASE_PATH", basePath.mkdirs() ? "Success": "Failed");
+                                Log.d("CAPTURE_BASE_PATH", basePath.mkdirs() ? "Success" : "Failed");
                             String path = mainpath + "photo_" + getPhotoTime() + ".jpg";
                             File captureFile = new File(path);
                             captureFile.createNewFile();
                             if (!captureFile.exists())
-                                Log.d("CAPTURE_FILE_PATH", captureFile.createNewFile() ? "Success": "Failed");
+                                Log.d("CAPTURE_FILE_PATH", captureFile.createNewFile() ? "Success" : "Failed");
                             FileOutputStream stream = new FileOutputStream(captureFile);
                             result.compress(Bitmap.CompressFormat.JPEG, 100, stream);
 
@@ -121,19 +132,21 @@ public class CameraActivity extends AppCompatActivity {
                     }
                 });
     }
-    public String getPhotoTime(){
 
-         return df.format(c.getTime());
+    public String getPhotoTime() {
+
+        return df.format(c.getTime());
 
     }
+
     public Bitmap mergeBitmaps(Bitmap face, Bitmap overlay) {
         // Create a new image with target size
         int width = face.getWidth();
         int height = face.getHeight();
         Bitmap newBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
-        Rect faceRect = new Rect(0,0,width,height);
-        Rect overlayRect = new Rect(0,0,overlay.getWidth(),overlay.getHeight());
+        Rect faceRect = new Rect(0, 0, width, height);
+        Rect overlayRect = new Rect(0, 0, overlay.getWidth(), overlay.getHeight());
 
         // Draw face and then overlay (Make sure rects are as needed)
         Canvas canvas = new Canvas(newBitmap);
@@ -143,4 +156,43 @@ public class CameraActivity extends AppCompatActivity {
     }
 
 
+    private class GraphicFaceTrackerFactory
+            implements MultiProcessor.Factory<Face> {
+        @Override
+        public Tracker<Face> create(Face face) {
+            return new GraphicFaceTracker(mGraphicOverlay);
+        }
+    }
+
+    private class GraphicFaceTracker extends Tracker<Face> {
+        // other stuff
+        private GraphicOverlay mOverlay;
+        private FaceGraphic mFaceGraphic;
+
+        GraphicFaceTracker(GraphicOverlay overlay) {
+            mOverlay = overlay;
+            mFaceGraphic = new FaceGraphic(overlay);
+        }
+        @Override
+        public void onNewItem(int faceId, Face face) {
+            mFaceGraphic.setId(faceId);
+        }
+
+        @Override
+        public void onUpdate(FaceDetector.Detections<Face> detectionResults,
+                             Face face) {
+            mOverlay.add(mFaceGraphic);
+            mFaceGraphic.updateFace(face);
+        }
+
+        @Override
+        public void onMissing(FaceDetector.Detections<Face> detectionResults) {
+            mOverlay.remove(mFaceGraphic);
+        }
+
+        @Override
+        public void onDone() {
+            mOverlay.remove(mFaceGraphic);
+        }
+    }
 }
