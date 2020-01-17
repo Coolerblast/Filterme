@@ -1,17 +1,20 @@
 package trap7.menglin.filterme;
 
+import android.Manifest;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.os.Bundle;
-import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,6 +24,7 @@ import com.google.android.gms.vision.MultiProcessor;
 import com.google.android.gms.vision.Tracker;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -34,64 +38,60 @@ public class CameraActivity extends AppCompatActivity {
     CameraSource mCameraSource;
     FaceDetector mDetector;
     Vibrator vibrator;
-    SurfaceView cameraView;
+    CameraSourcePreview cameraView;
     Matrix matrix = new Matrix();
     SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
     Calendar c = Calendar.getInstance();
-     GraphicOverlay mGraphicOverlay;
+    GraphicOverlay mGraphicOverlay;
+    GraphicFaceTracker mGraphicFaceTracker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         matrix.postRotate(90);
+        setContentView(R.layout.activity_camera);
+
+        cameraView = (CameraSourcePreview) findViewById(R.id.cameraView);
         mGraphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
 
-        setContentView(R.layout.activity_camera);
-        mDetector = new FaceDetector.Builder(getApplicationContext()).setLandmarkType(FaceDetector.ALL_LANDMARKS).build();
-//        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-//        vibrator.vibrate(VibrationEffect.createOneShot(10000, 100));
-        mDetector.setProcessor(
-                new MultiProcessor.Builder<Face>(new GraphicFaceTrackerFactory()).build()
-        );
-        cameraView = (SurfaceView) findViewById(R.id.cameraView);
+        createCameraSource();
+    }
+
+    public void createCameraSource() {
+        mDetector = new FaceDetector.Builder(getApplicationContext()).setClassificationType(FaceDetector.ALL_CLASSIFICATIONS).setLandmarkType(FaceDetector.ALL_LANDMARKS).build();
+
         mDetector.setProcessor(
                 new MultiProcessor.Builder<>(new GraphicFaceTrackerFactory())
                         .build());
-        mCameraSource = new CameraSource.Builder(getApplicationContext(), mDetector).setAutoFocusEnabled(true).build();
 
-        cameraView.getHolder().addCallback(new SurfaceHolder.Callback() {
-            @Override
-            public void surfaceCreated(SurfaceHolder surfaceHolder) {
-                restartCamera();
+        mCameraSource = new CameraSource.Builder(getApplicationContext(), mDetector)
+                .setRequestedPreviewSize(640, 480)
+                .setFacing(CameraSource.CAMERA_FACING_BACK)
+                .setRequestedFps(30.0f)
+                .build();
+    }
+
+    private void startCameraSource() {
+        if (mCameraSource != null) {
+            try {
+                cameraView.start(mCameraSource, mGraphicOverlay);
+            } catch (IOException e) {
+                Log.e("CAMERA SOURCE", "Unable to start camera source.", e);
+                mCameraSource.release();
+                mCameraSource = null;
             }
-
-            @Override
-            public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-                mCameraSource.stop();
-            }
-        });
-
+        }
     }
 
     public void swapCamera(View v) {
-        mCameraSource.stop();
-        mCameraSource = new CameraSource.Builder(this, mDetector).setFacing((mCameraSource.getCameraFacing() + 1) % 2).setAutoFocusEnabled(true).build();
-        matrix.postRotate(180);
-
-        restartCamera();
-    }
-
-    public void restartCamera() {
-        try {
-            mCameraSource.start(cameraView.getHolder());
-        } catch (IOException ie) {
-            Log.e("CAMERA SOURCE", ie.getMessage());
+        if (mCameraSource != null) {
+            mCameraSource.stop();
+            mCameraSource = new CameraSource.Builder(getApplicationContext(), mDetector)
+                    .setRequestedPreviewSize(640, 480)
+                    .setFacing((mCameraSource.getCameraFacing() + 1) % 2)
+                    .setRequestedFps(30.0f)
+                    .build();            matrix.postRotate(180);
+            startCameraSource();
         }
     }
 
@@ -108,8 +108,9 @@ public class CameraActivity extends AppCompatActivity {
                         Bitmap overlay = cameraView.getDrawingCache();
 
                         // Generate the final merged image
-                        Bitmap unrotatedpos = mergeBitmaps(face, overlay);
-                        Bitmap result = Bitmap.createBitmap(unrotatedpos, 0, 0, unrotatedpos.getWidth(), unrotatedpos.getHeight(), matrix, true);
+                        Bitmap result = Bitmap.createBitmap(face, 0, 0, face.getWidth(), face.getHeight(), matrix, true);
+
+                        result = mergeBitmaps(result, overlay);
                         // Save result image to file
                         try {
                             String mainpath = getExternalStorageDirectory() + separator + "Pictures" + separator + "Filterme" + separator;
@@ -156,6 +157,28 @@ public class CameraActivity extends AppCompatActivity {
     }
 
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        startCameraSource();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        cameraView.stop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mCameraSource != null) {
+            mCameraSource.release();
+        }
+    }
+
+
     private class GraphicFaceTrackerFactory
             implements MultiProcessor.Factory<Face> {
         @Override
@@ -165,7 +188,6 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     private class GraphicFaceTracker extends Tracker<Face> {
-        // other stuff
         private GraphicOverlay mOverlay;
         private FaceGraphic mFaceGraphic;
 
@@ -173,14 +195,13 @@ public class CameraActivity extends AppCompatActivity {
             mOverlay = overlay;
             mFaceGraphic = new FaceGraphic(overlay);
         }
-        @Override
-        public void onNewItem(int faceId, Face face) {
-            mFaceGraphic.setId(faceId);
-        }
 
         @Override
-        public void onUpdate(FaceDetector.Detections<Face> detectionResults,
-                             Face face) {
+        public void onNewItem(int faceId, Face item) {
+            mFaceGraphic.setId(faceId);
+        }
+        @Override
+        public void onUpdate(FaceDetector.Detections<Face> detectionResults, Face face) {
             mOverlay.add(mFaceGraphic);
             mFaceGraphic.updateFace(face);
         }
