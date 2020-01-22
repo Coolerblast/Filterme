@@ -40,8 +40,7 @@ public class CameraActivity extends AppCompatActivity {
     Vibrator vibrator;
     CameraSourcePreview cameraView;
     Matrix matrix = new Matrix();
-    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
-    Calendar c = Calendar.getInstance();
+
     GraphicOverlay mGraphicOverlay;
     GraphicFaceTracker mGraphicFaceTracker;
 
@@ -106,11 +105,13 @@ public class CameraActivity extends AppCompatActivity {
                         // Generate the Eyes Overlay Bitmap
                         cameraView.setDrawingCacheEnabled(true);
                         Bitmap overlay = cameraView.getDrawingCache();
-
                         // Generate the final merged image
                         Bitmap result = Bitmap.createBitmap(face, 0, 0, face.getWidth(), face.getHeight(), matrix, true);
 
                         result = mergeBitmaps(result, overlay);
+
+
+                        cameraView.destroyDrawingCache();
                         // Save result image to file
                         try {
                             String mainpath = getExternalStorageDirectory() + separator + "Pictures" + separator + "Filterme" + separator;
@@ -135,7 +136,8 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     public String getPhotoTime() {
-
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+        Calendar c = Calendar.getInstance();
         return df.format(c.getTime());
 
     }
