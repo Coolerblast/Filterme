@@ -139,20 +139,28 @@ class FaceGraphic extends GraphicOverlay.Graphic {
     }
 
     public void drawGlasses(Canvas canvas) {
-        Landmark leftEye = null, rightEye = null;
-        for (Landmark lm : mFace.getLandmarks()) {
-            if (lm.getType() == Landmark.LEFT_EYE)
-            leftEye = mFace.getLandmarks().get(Landmark.LEFT_EYE);
-            if (lm.getType() == Landmark.RIGHT_EYE)
-            rightEye = mFace.getLandmarks().get(Landmark.RIGHT_EYE);
-        }
+        Landmark leftEye = mFace.getLandmarks().get(FirebaseVisionFaceLandmark.LEFT_EYE);
+        Landmark rightEye = mFace.getLandmarks().get(FirebaseVisionFaceLandmark.RIGHT_EYE);
+        System.out.println(leftEye.getPosition() + " " + rightEye.getPosition());
         if (leftEye != null && rightEye != null) {
             float eyeDist = leftEye.getPosition().x - rightEye.getPosition().x;
             int delta = (int) scaleX(eyeDist) / 2;
-            Rect glassesRect = new Rect((int) translateX(leftEye.getPosition().x) - delta,
-                    (int) translateY(leftEye.getPosition().y) - delta,
+            System.out.println(delta + " " + ((int) translateX(leftEye.getPosition().x) - delta) + " " +
+                    ((int) translateY(leftEye.getPosition().y) - delta) + " "  +
+                    ((int) translateX(rightEye.getPosition().x) + delta) + " " +
+                    ((int) translateY(rightEye.getPosition().y) + delta));
+//            Rect glassesRect = new Rect((int) translateX(leftEye.getPosition().x) - delta,
+//                    (int) translateY(leftEye.getPosition().y) - delta,
+//                    (int) translateX(rightEye.getPosition().x) + delta,
+//                    (int) translateY(rightEye.getPosition().y) + delta);
+                        Rect glassesRect = new Rect((int) translateX(leftEye.getPosition().x) - delta,
+                    100,
                     (int) translateX(rightEye.getPosition().x) + delta,
-                    (int) translateY(rightEye.getPosition().y) + delta);
+                    300);
+                        canvas.drawCircle((int) translateX(leftEye.getPosition().x),
+                    (int) translateY(leftEye.getPosition().y), 20, new Paint(Color.GREEN));
+            canvas.drawCircle((int) translateX(rightEye.getPosition().x),
+                    (int) translateY(rightEye.getPosition().y), 20, new Paint(Color.RED));
             canvas.drawBitmap(mBitmap, null, glassesRect, null);
         }
 
