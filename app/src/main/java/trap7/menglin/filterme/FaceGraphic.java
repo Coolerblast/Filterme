@@ -102,12 +102,12 @@ class FaceGraphic extends GraphicOverlay.Graphic {
         canvas.drawCircle(x, y, FACE_POSITION_RADIUS, mFacePositionPaint);
         for (Landmark lm : face.getLandmarks()) {
             if (lm.getType() == FirebaseVisionFaceLandmark.LEFT_EYE)
-            canvas.drawCircle(translateX(lm.getPosition().x), translateY(lm.getPosition().y), FACE_POSITION_RADIUS, mFacePositionPaint);
+                canvas.drawCircle(translateX(lm.getPosition().x), translateY(lm.getPosition().y), FACE_POSITION_RADIUS, mFacePositionPaint);
         }
         canvas.drawText("id: " + mFaceId, x + ID_X_OFFSET, y + ID_Y_OFFSET, mIdPaint);
         canvas.drawText("happiness: " + String.format("%.2f", face.getIsSmilingProbability()), x - ID_X_OFFSET, y - ID_Y_OFFSET, mIdPaint);
         canvas.drawText("right eye: " + String.format("%.2f", face.getIsRightEyeOpenProbability()), x + ID_X_OFFSET * 2, y + ID_Y_OFFSET * 2, mIdPaint);
-        canvas.drawText("left eye: " + String.format("%.2f", face.getIsLeftEyeOpenProbability()), x - ID_X_OFFSET*2, y - ID_Y_OFFSET*2, mIdPaint);
+        canvas.drawText("left eye: " + String.format("%.2f", face.getIsLeftEyeOpenProbability()), x - ID_X_OFFSET * 2, y - ID_Y_OFFSET * 2, mIdPaint);
 
         // Draws a bounding box around the face.
         float xOffset = scaleX(face.getWidth() / 2.0f);
@@ -138,26 +138,30 @@ class FaceGraphic extends GraphicOverlay.Graphic {
         }
     }
 
+    private Landmark getLandmark(int type) {
+        for (Landmark landmark : mFace.getLandmarks())
+            if (landmark.getType() == type)
+                return landmark;
+        return null;
+    }
+
     public void drawGlasses(Canvas canvas) {
-        Landmark leftEye = mFace.getLandmarks().get(FirebaseVisionFaceLandmark.LEFT_EYE);
-        Landmark rightEye = mFace.getLandmarks().get(FirebaseVisionFaceLandmark.RIGHT_EYE);
-        System.out.println(leftEye.getPosition() + " " + rightEye.getPosition());
+        Landmark leftEye = getLandmark(FirebaseVisionFaceLandmark.LEFT_EYE);
+        Landmark rightEye = getLandmark(FirebaseVisionFaceLandmark.RIGHT_EYE);
         if (leftEye != null && rightEye != null) {
             float eyeDist = leftEye.getPosition().x - rightEye.getPosition().x;
             int delta = (int) scaleX(eyeDist) / 2;
-            System.out.println(delta + " " + ((int) translateX(leftEye.getPosition().x) - delta) + " " +
-                    ((int) translateY(leftEye.getPosition().y) - delta) + " "  +
+            System.out.println(delta  + " " +
                     ((int) translateX(rightEye.getPosition().x) + delta) + " " +
-                    ((int) translateY(rightEye.getPosition().y) + delta));
-//            Rect glassesRect = new Rect((int) translateX(leftEye.getPosition().x) - delta,
-//                    (int) translateY(leftEye.getPosition().y) - delta,
-//                    (int) translateX(rightEye.getPosition().x) + delta,
-//                    (int) translateY(rightEye.getPosition().y) + delta);
-                        Rect glassesRect = new Rect((int) translateX(leftEye.getPosition().x) - delta,
-                    100,
+                    ((int) translateY(rightEye.getPosition().y) + delta)+ " " +
+                    ((int) translateX(leftEye.getPosition().x) - delta) + " " +
+                    ((int) translateY(leftEye.getPosition().y) - delta));
+            Rect glassesRect = new Rect(
                     (int) translateX(rightEye.getPosition().x) + delta,
-                    300);
-                        canvas.drawCircle((int) translateX(leftEye.getPosition().x),
+                    (int) translateY(rightEye.getPosition().y) + delta,
+                    (int) translateX(leftEye.getPosition().x) - delta,
+                    (int) translateY(leftEye.getPosition().y) - delta);
+            canvas.drawCircle((int) translateX(leftEye.getPosition().x),
                     (int) translateY(leftEye.getPosition().y), 20, new Paint(Color.GREEN));
             canvas.drawCircle((int) translateX(rightEye.getPosition().x),
                     (int) translateY(rightEye.getPosition().y), 20, new Paint(Color.RED));
