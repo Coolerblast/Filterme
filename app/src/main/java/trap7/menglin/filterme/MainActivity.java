@@ -44,5 +44,8 @@ public class MainActivity extends AppCompatActivity {
         FragmentTransaction ftChat = getSupportFragmentManager().beginTransaction();
         ftChat.add(R.id.placeholderChat, new DetailFragment("Chat", ChatActivity.class));
         ftChat.commit();
+        FragmentTransaction ftSignOut = getSupportFragmentManager().beginTransaction();
+        ftChat.add(R.id.placeholderSignOut, new DetailFragment("Sign Out", LoginActivity.class));
+        ftSignOut.commit();
     }
 }

@@ -195,7 +195,8 @@ public class CameraActivity extends AppCompatActivity {
 
         GraphicFaceTracker(GraphicOverlay overlay) {
             mOverlay = overlay;
-            mFaceGraphic = new FaceGraphic(overlay);
+            mFaceGraphic = new FaceGraphic(overlay, BitmapFactory.decodeResource(getResources(), R.drawable.sunglasses), FaceGraphic.TYPE_GLASSES);
+
         }
 
         @Override
