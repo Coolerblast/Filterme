@@ -67,6 +67,7 @@ public class CameraActivity extends AppCompatActivity {
                 .setRequestedPreviewSize(640, 480)
                 .setFacing(CameraSource.CAMERA_FACING_BACK)
                 .setRequestedFps(30.0f)
+                .setAutoFocusEnabled(true)
                 .build();
     }
 
@@ -89,7 +90,9 @@ public class CameraActivity extends AppCompatActivity {
                     .setRequestedPreviewSize(640, 480)
                     .setFacing((mCameraSource.getCameraFacing() + 1) % 2)
                     .setRequestedFps(30.0f)
-                    .build();            matrix.postRotate(180);
+                    .setAutoFocusEnabled(true)
+                    .build();
+            matrix.postRotate(180);
             startCameraSource();
         }
     }

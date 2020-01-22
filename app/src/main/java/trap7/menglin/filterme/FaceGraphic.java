@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.Log;
@@ -149,18 +150,26 @@ class FaceGraphic extends GraphicOverlay.Graphic {
         Landmark leftEye = getLandmark(FirebaseVisionFaceLandmark.LEFT_EYE);
         Landmark rightEye = getLandmark(FirebaseVisionFaceLandmark.RIGHT_EYE);
         if (leftEye != null && rightEye != null) {
-            float eyeDist = leftEye.getPosition().x - rightEye.getPosition().x;
+            float eyeDist = Math.abs(leftEye.getPosition().x - rightEye.getPosition().x);
             int delta = (int) scaleX(eyeDist) / 2;
-            System.out.println(delta  + " " +
-                    ((int) translateX(rightEye.getPosition().x) + delta) + " " +
-                    ((int) translateY(rightEye.getPosition().y) + delta)+ " " +
-                    ((int) translateX(leftEye.getPosition().x) - delta) + " " +
-                    ((int) translateY(leftEye.getPosition().y) - delta));
-            Rect glassesRect = new Rect(
-                    (int) translateX(rightEye.getPosition().x) + delta,
-                    (int) translateY(rightEye.getPosition().y) + delta,
-                    (int) translateX(leftEye.getPosition().x) - delta,
-                    (int) translateY(leftEye.getPosition().y) - delta);
+            int     left = (int) translateX(leftEye.getPosition().x),
+                    right = (int) translateX(rightEye.getPosition().x),
+                    top = (int) translateY(leftEye.getPosition().y),
+                    bottom = (int) translateY(rightEye.getPosition().y);
+            if (left > right) {
+                int temp = left;
+                left = right;
+                right = temp;
+            }
+            if (top > bottom) {
+                int temp = top;
+                top = bottom;
+                bottom = temp;
+            }
+//            float angle = (float) Math.atan2((right - left) , (bottom - top));
+//            Matrix matrix = new Matrix();
+//            matrix.postRotate(angle);
+            Rect glassesRect = new Rect(left - delta, top - delta, right + delta, bottom + delta);
             canvas.drawCircle((int) translateX(leftEye.getPosition().x),
                     (int) translateY(leftEye.getPosition().y), 20, new Paint(Color.GREEN));
             canvas.drawCircle((int) translateX(rightEye.getPosition().x),
