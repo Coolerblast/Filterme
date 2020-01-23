@@ -42,9 +42,7 @@ public class DetailFragment extends Fragment {
         // Setup any handles to view objects here
         // EditText etFoo = (EditText) view.findViewById(R.id.etFoo);
 
-        TextView textView = (TextView) view.findViewById(R.id.textView);
         final Button button = (Button) view.findViewById(R.id.button);
-        textView.setText(name);
         if(name.equals("Sign Out"))
             button.setText(name.toLowerCase());
         else

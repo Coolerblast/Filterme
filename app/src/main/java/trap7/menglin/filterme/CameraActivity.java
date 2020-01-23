@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -14,6 +15,7 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 
@@ -40,7 +42,8 @@ public class CameraActivity extends AppCompatActivity {
     Vibrator vibrator;
     CameraSourcePreview cameraView;
     Matrix matrix = new Matrix();
-
+    SharedPreferences.Editor editor;
+    SharedPreferences pref;
     GraphicOverlay mGraphicOverlay;
     GraphicFaceTracker mGraphicFaceTracker;
 
@@ -49,6 +52,7 @@ public class CameraActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         matrix.postRotate(90);
         setContentView(R.layout.activity_camera);
+        pref = PreferenceManager.getDefaultSharedPreferences(this);
 
         cameraView = (CameraSourcePreview) findViewById(R.id.cameraView);
         mGraphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
@@ -198,7 +202,10 @@ public class CameraActivity extends AppCompatActivity {
 
         GraphicFaceTracker(GraphicOverlay overlay) {
             mOverlay = overlay;
-            mFaceGraphic = new FaceGraphic(overlay, BitmapFactory.decodeResource(getResources(), R.drawable.sunglasses), FaceGraphic.TYPE_GLASSES);
+            if(pref.getString("Filter", "Demo").equals("Demo"))
+                mFaceGraphic = new FaceGraphic(overlay, BitmapFactory.decodeResource(getResources(), R.drawable.sunglasses), FaceGraphic.TYPE_GLASSES, true);
+            else if(pref.getString("Filter", "Glasses").equals("Glasses"))
+                mFaceGraphic = new FaceGraphic(overlay, BitmapFactory.decodeResource(getResources(), R.drawable.sunglasses), FaceGraphic.TYPE_GLASSES, false);
 
         }
 

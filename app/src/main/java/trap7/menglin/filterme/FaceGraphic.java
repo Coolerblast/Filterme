@@ -50,13 +50,15 @@ class FaceGraphic extends GraphicOverlay.Graphic {
     private volatile Face mFace;
     private int mFaceId;
     private float mFaceHappiness;
-
-    FaceGraphic(GraphicOverlay overlay, Bitmap bitmap, int type) {
+    private  boolean demo;
+    FaceGraphic(GraphicOverlay overlay, Bitmap bitmap, int type, boolean demo) {
         super(overlay);
         this.mBitmap = bitmap;
         this.mType = type;
+        this.demo = demo;
         mCurrentColorIndex = (mCurrentColorIndex + 1) % COLOR_CHOICES.length;
         final int selectedColor = COLOR_CHOICES[mCurrentColorIndex];
+        mBitmap =   Bitmap.createScaledBitmap(mBitmap, (int)(mBitmap.getWidth()*.6), (int)(mBitmap.getHeight()*.6), false);
 
         mFacePositionPaint = new Paint();
         mFacePositionPaint.setColor(selectedColor);
@@ -95,29 +97,33 @@ class FaceGraphic extends GraphicOverlay.Graphic {
             return;
         }
 
-        drawFilter(canvas);
 
         // Draws a circle at the position of the detected face, with the face's track id below.
         float x = translateX(face.getPosition().x + face.getWidth() / 2);
         float y = translateY(face.getPosition().y + face.getHeight() / 2);
-        canvas.drawCircle(x, y, FACE_POSITION_RADIUS, mFacePositionPaint);
-        for (Landmark lm : face.getLandmarks()) {
-            if (lm.getType() == FirebaseVisionFaceLandmark.LEFT_EYE)
-                canvas.drawCircle(translateX(lm.getPosition().x), translateY(lm.getPosition().y), FACE_POSITION_RADIUS, mFacePositionPaint);
-        }
-        canvas.drawText("id: " + mFaceId, x + ID_X_OFFSET, y + ID_Y_OFFSET, mIdPaint);
-        canvas.drawText("happiness: " + String.format("%.2f", face.getIsSmilingProbability()), x - ID_X_OFFSET, y - ID_Y_OFFSET, mIdPaint);
-        canvas.drawText("right eye: " + String.format("%.2f", face.getIsRightEyeOpenProbability()), x + ID_X_OFFSET * 2, y + ID_Y_OFFSET * 2, mIdPaint);
-        canvas.drawText("left eye: " + String.format("%.2f", face.getIsLeftEyeOpenProbability()), x - ID_X_OFFSET * 2, y - ID_Y_OFFSET * 2, mIdPaint);
+        if(demo) {
+            canvas.drawCircle(x, y, FACE_POSITION_RADIUS, mFacePositionPaint);
 
-        // Draws a bounding box around the face.
-        float xOffset = scaleX(face.getWidth() / 2.0f);
-        float yOffset = scaleY(face.getHeight() / 2.0f);
-        float left = x - xOffset;
-        float top = y - yOffset;
-        float right = x + xOffset;
-        float bottom = y + yOffset;
-        canvas.drawRect(left, top, right, bottom, mBoxPaint);
+            for (Landmark lm : face.getLandmarks()) {
+                  canvas.drawCircle(translateX(lm.getPosition().x), translateY(lm.getPosition().y), FACE_POSITION_RADIUS, mFacePositionPaint);
+            }
+            canvas.drawText("id: " + mFaceId, x + ID_X_OFFSET, y + ID_Y_OFFSET, mIdPaint);
+            canvas.drawText("happiness: " + String.format("%.2f", face.getIsSmilingProbability()), x - ID_X_OFFSET, y - ID_Y_OFFSET, mIdPaint);
+            canvas.drawText("right eye: " + String.format("%.2f", face.getIsRightEyeOpenProbability()), x + ID_X_OFFSET * 2, y + ID_Y_OFFSET * 2, mIdPaint);
+            canvas.drawText("left eye: " + String.format("%.2f", face.getIsLeftEyeOpenProbability()), x - ID_X_OFFSET * 2, y - ID_Y_OFFSET * 2, mIdPaint);
+
+            // Draws a bounding box around the face.
+            float xOffset = scaleX(face.getWidth() / 2.0f);
+            float yOffset = scaleY(face.getHeight() / 2.0f);
+            float left = x - xOffset;
+            float top = y - yOffset;
+            float right = x + xOffset;
+            float bottom = y + yOffset;
+            canvas.drawRect(left, top, right, bottom, mBoxPaint);
+        }
+        else
+            drawFilter(canvas);
+
     }
 
     public void drawFilter(Canvas canvas) {

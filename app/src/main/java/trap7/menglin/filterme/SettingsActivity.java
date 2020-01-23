@@ -4,28 +4,40 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class SettingsActivity extends AppCompatActivity {
-    private RecyclerView recyclerView;
-    private RecyclerView.Adapter mAdapter;
-    private RecyclerView.LayoutManager layoutManager;
+    SharedPreferences.Editor editor;
+    SharedPreferences pref;
+    Button demo, glasses;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        pref = PreferenceManager.getDefaultSharedPreferences(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_setting);
-        recyclerView = findViewById(R.id.recycler_view);
-        recyclerView.setHasFixedSize(true);
-        layoutManager = new LinearLayoutManager(this);
-        recyclerView.setLayoutManager(layoutManager);
-        List<String> input = new ArrayList<>();
-        for (int i = 0; i < 50; i++) {
-            input.add("Test" + i);
+
+    }
+    public void onClick(View view){
+        editor = pref.edit();
+        switch (view.getId()){
+            case R.id.demoBtn:
+                editor.putString("Filter", "Demo");
+                Toast.makeText(this, "Demo Filter Chosen", Toast.LENGTH_LONG).show();
+                break;
+            case R.id.glassesBtn:
+                editor.putString("Filter", "Glasses");
+                Toast.makeText(this, "Glasses Filter Chosen", Toast.LENGTH_LONG).show();
+                break;
         }
-        mAdapter = new MyAdapter(input);
-        recyclerView.setAdapter(mAdapter);
+        editor.apply();
     }
 }

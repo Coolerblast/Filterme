@@ -54,6 +54,10 @@ public class LoginActivity extends AppCompatActivity {
         btnSignUp = findViewById(R.id.btnSignUp);
     }
     public void onClick(View view){
+        editor = pref.edit();
+        if(!pref.contains("Filter"))
+            editor.putString("Filter", "Demo");
+        editor.apply();
         switch (view.getId()){
             case R.id.btnLogin:
                 email = edtEmail.getText().toString().trim();
